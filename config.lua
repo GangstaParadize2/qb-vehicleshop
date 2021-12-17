@@ -29,43 +29,43 @@ Config.Shops = {
         ['ShowroomVehicles'] = {
             [1] = {
                 coords = vector4(-45.65, -1093.66, 25.44, 69.5), -- where the vehicle will spawn on display
-                defaultVehicle = 'adder', -- Default display vehicle
-                chosenVehicle = 'adder', -- Same as default but is dynamically changed when swapping vehicles
+                defaultVehicle = 'evo10', -- Default display vehicle
+                chosenVehicle = 'evo10', -- Same as default but is dynamically changed when swapping vehicles
             },
             [2] = {
                 coords = vector4(-48.27, -1101.86, 25.44, 294.5),
-                defaultVehicle = 'schafter2',
-                chosenVehicle = 'schafter2',
+                defaultVehicle = 'foxsupra',
+                chosenVehicle = 'foxsupra',
             },
             [3] = {
                 coords = vector4(-39.6, -1096.01, 25.44, 66.5),
-                defaultVehicle = 'comet2',
-                chosenVehicle = 'comet2',
+                defaultVehicle = 'cam8tun',
+                chosenVehicle = 'cam8tun',
             },
             [4] = {
                 coords = vector4(-51.21, -1096.77, 25.44, 254.5),
-                defaultVehicle = 'vigero',
-                chosenVehicle = 'vigero',
+                defaultVehicle = 'rs6',
+                chosenVehicle = 'rs6',
             },
             [5] = {
                 coords = vector4(-40.18, -1104.13, 25.44, 338.5),
-                defaultVehicle = 't20',
-                chosenVehicle = 't20',
+                defaultVehicle = 'pschargerVenom',
+                chosenVehicle = 'pschargerVenom',
             },
             [6] = {
                 coords = vector4(-43.31, -1099.02, 25.44, 52.5),
-                defaultVehicle = 'bati',
-                chosenVehicle = 'bati',
+                defaultVehicle = '18performante',
+                chosenVehicle = '18performante',
             },
             [7] = {
                 coords = vector4(-50.66, -1093.05, 25.44, 222.5),
-                defaultVehicle = 'bati',
-                chosenVehicle = 'bati',
+                defaultVehicle = 'rmodjeep',
+                chosenVehicle = 'rmodjeep',
             },
             [8] = {
                 coords = vector4(-44.28, -1102.47, 25.44, 298.5),
-                defaultVehicle = 'bati',
-                chosenVehicle = 'bati',
+                defaultVehicle = '370z',
+                chosenVehicle = '370z',
             }
         },
     },
@@ -77,29 +77,24 @@ Config.Shops = {
             ['sports'] = 'Sports'
         },
         ['TestDriveTimeLimit'] = 0.5,
-        ['Location'] = vector3(-63.59, 68.25, 73.06),
-        ['ReturnLocation'] = vector3(-65.05, 81.23, 71.16),
-        ['VehicleSpawn'] = vector4(-71.13, 84.04, 71.09, 65.23),
+        ['Location'] = vector3(116.11, -146.63, 54.86),
+        ['ReturnLocation'] = vector3(116.11, -146.63, 54.86),
+        ['VehicleSpawn'] = vector4(150.6, -125.6, 54.31, 71.89),
         ['ShowroomVehicles'] = {
             [1] = {
-                coords = vector4(-75.96, 74.78, 70.90, 221.69),
-                defaultVehicle = 'italirsx',
-                chosenVehicle = 'italirsx',
+                coords = vector4(126.37, -157.19, 53.78, 306.54),
+                defaultVehicle = 'rmodmi8lb',
+                chosenVehicle = 'rmodmi8lb',
             },
             [2] = {
-                coords = vector4(-66.52, 74.33, 70.65, 188.03),
-                defaultVehicle = 'italigtb',
-                chosenVehicle = 'italigtb',
+                coords = vector4(134.38, -160.12, 53.78, 334.45),
+                defaultVehicle = 'demonhawk',
+                chosenVehicle = 'demonhawk',
             },
             [3] = {
-                coords = vector4(-71.83, 68.60, 70.75, 276.57),
-                defaultVehicle = 'nero',
-                chosenVehicle = 'nero',
-            },
-            [4] = {
-                coords = vector4(-59.95, 68.61, 70.85, 181.44),
-                defaultVehicle = 'comet2',
-                chosenVehicle = 'comet2',
+                coords = vector4(142.13, -163.08, 53.78, 14.18),
+                defaultVehicle = 'terzo',
+                chosenVehicle = 'terzo',
             }
         }
     } -- Add your next table under this comma
