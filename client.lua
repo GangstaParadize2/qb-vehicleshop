@@ -1,8 +1,12 @@
 -- Variables
 local QBCore = exports['qb-core']:GetCoreObject()
 local PlayerData = QBCore.Functions.GetPlayerData() -- Just for resource restart (same as event handler)
-local inPDM = false
-local inLuxury = false
+local insideZones = {}
+
+for name, shop in pairs(Config.Shops) do -- foreach shop
+    insideZones[name] = false  -- default to not being in a shop
+end
+
 local testDriveVeh, inTestDrive = 0, false
 local ClosestVehicle, ClosestShop = 1, nil
 local zones = {}
@@ -146,6 +150,16 @@ local function startTestDriveTimer(testDriveTime)
     end)
 end
 
+local function isInShop() 
+    for shopName, isInside in pairs(insideZones) do
+        if isInside then
+            return true
+        end
+    end
+
+    return false
+end
+
 local function createVehZones(ClosestShop) -- This will create an entity zone if config is true that you can use to target and open the vehicle menu
     if not Config.UsingTarget then
         for i = 1, #Config.Shops[ClosestShop]['ShowroomVehicles'] do
@@ -178,7 +192,7 @@ local function createVehZones(ClosestShop) -- This will create an entity zone if
                     icon = "fas fa-car",
                     label = "Vehicle Interaction",
                     canInteract = function(entity)
-                        if (inPDM or inLuxury) and (Config.Shops[ClosestShop]['Job'] == 'none' or PlayerData.job.name == Config.Shops[ClosestShop]['Job']) then
+                        if (isInShop()) and (Config.Shops[ClosestShop]['Job'] == 'none' or PlayerData.job.name == Config.Shops[ClosestShop]['Job']) then
                             return true
                         end
                         return false
@@ -192,155 +206,151 @@ end
 
 -- Zones
 
-local pdm = PolyZone:Create({
-    vector2(-56.727394104004, -1086.2325439453),
-    vector2(-60.612808227539, -1096.7795410156),
-    vector2(-58.26834487915, -1100.572265625),
-    vector2(-35.927803039551, -1109.0034179688),
-    vector2(-34.427627563477, -1108.5111083984),
-    vector2(-32.02657699585, -1101.5877685547),
-    vector2(-33.342102050781, -1101.0377197266),
-    vector2(-31.292987823486, -1095.3717041016)
-  }, {
-    name="pdm",
-    minZ = 25.0,
-    maxZ = 28.0
-})
+function createFreeUseShop(shopShape, name)
+    local zone = PolyZone:Create(shopShape, {  -- create the zone
+        name= name,
+        minZ = shopShape.minZ,
+        maxZ = shopShape.maxZ
+    })
+    
+    zone:onPlayerInOut(function(isPointInside)
+        if isPointInside then
+            ClosestShop = name
+            insideZones[name] = true
+            CreateThread(function()
+                while insideZones[name] do
+                    setClosestShowroomVehicle()
+                    vehicleMenu = {
+                        {
+                            isMenuHeader = true,
+                            header = getVehBrand():upper().. ' '..getVehName():upper().. ' - $' ..getVehPrice(),
+                        },
+                        {
+                            header = 'Test Drive',
+                            txt = 'Test drive currently selected vehicle',
+                            params = {
+                                event = 'qb-vehicleshop:client:TestDrive',
+                            }
+                        },
+                        {
+                            header = "Buy Vehicle",
+                            txt = 'Purchase currently selected vehicle',
+                            params = {
+                                isServer = true,
+                                event = 'qb-vehicleshop:server:buyShowroomVehicle',
+                                args = {
+                                    buyVehicle = Config.Shops[ClosestShop]["ShowroomVehicles"][ClosestVehicle].chosenVehicle
+                                }
+                            }
+                        },
+                        {
+                            header = 'Finance Vehicle',
+                            txt = 'Finance currently selected vehicle',
+                            params = {
+                                event = 'qb-vehicleshop:client:openFinance',
+                                args = {
+                                    price = getVehPrice(),
+                                    buyVehicle = Config.Shops[ClosestShop]["ShowroomVehicles"][ClosestVehicle].chosenVehicle
+                                }
+                            }
+                        },
+                        {
+                            header = 'Swap Vehicle',
+                            txt = 'Change currently selected vehicle',
+                            params = {
+                                event = 'qb-vehicleshop:client:vehCategories',
+                            }
+                        },
+                    }
+                    Wait(1000)
+                end
+            end)
+        else
+            insideZones[name] = false -- leave the shops zone
+            ClosestShop = nil
+            ClosestVehicle = nil
+        end
+    end)
+end
 
-pdm:onPlayerInOut(function(isPointInside)
-    if isPointInside then
-        ClosestShop = 'pdm'
-        inPDM = true
-        CreateThread(function()
-            while inPDM do
-                setClosestShowroomVehicle()
-                vehicleMenu = {
-                    {
-                        isMenuHeader = true,
-                        header = getVehBrand():upper().. ' '..getVehName():upper().. ' - $' ..getVehPrice(),
-                    },
-                    {
-                        header = 'Test Drive',
-                        txt = 'Test drive currently selected vehicle',
-                        params = {
-                            event = 'qb-vehicleshop:client:TestDrive',
-                        }
-                    },
-                    {
-                        header = "Buy Vehicle",
-                        txt = 'Purchase currently selected vehicle',
-                        params = {
-                            isServer = true,
-                            event = 'qb-vehicleshop:server:buyShowroomVehicle',
-                            args = {
-                                buyVehicle = Config.Shops[ClosestShop]["ShowroomVehicles"][ClosestVehicle].chosenVehicle
+function createManagedShop(shopShape, name, jobName)
+    local zone = PolyZone:Create(shopShape, {  -- create the zone
+        name= name,
+        minZ = shopShape.minZ,
+        maxZ = shopShape.maxZ
+    })
+    
+    zone:onPlayerInOut(function(isPointInside)
+        if isPointInside then
+            ClosestShop = name
+            insideZones[name] = true
+            CreateThread(function()
+                while insideZones[name] and PlayerData.job.name == Config.Shops[name]['Job'] do
+                    setClosestShowroomVehicle()
+                    vehicleMenu = {
+                        {
+                            isMenuHeader = true,
+                            header = getVehBrand():upper().. ' '..getVehName():upper().. ' - $' ..getVehPrice(),
+                        },
+                        {
+                            header = 'Test Drive',
+                            txt = 'Send the closest citizen for a test drive',
+                            params = {
+                                isServer = true,
+                                event = 'qb-vehicleshop:server:customTestDrive',
+                                args = {
+                                    testVehicle = Config.Shops[ClosestShop]["ShowroomVehicles"][ClosestVehicle].chosenVehicle
+                                }
                             }
-                        }
-                    },
-                    {
-                        header = 'Finance Vehicle',
-                        txt = 'Finance currently selected vehicle',
-                        params = {
-                            event = 'qb-vehicleshop:client:openFinance',
-                            args = {
-                                price = getVehPrice(),
-                                buyVehicle = Config.Shops[ClosestShop]["ShowroomVehicles"][ClosestVehicle].chosenVehicle
+                        },
+                        {
+                            header = "Sell Vehicle",
+                            txt = 'Sell vehicle to closest citizen',
+                            params = {
+                                isServer = true,
+                                event = 'qb-vehicleshop:server:sellShowroomVehicle',
+                                args = {
+                                    buyVehicle = Config.Shops[ClosestShop]["ShowroomVehicles"][ClosestVehicle].chosenVehicle
+                                }
                             }
-                        }
-                    },
-                    {
-                        header = 'Swap Vehicle',
-                        txt = 'Change currently selected vehicle',
-                        params = {
-                            event = 'qb-vehicleshop:client:vehCategories',
-                        }
-                    },
-                }
-                Wait(1000)
-            end
-        end)
-    else
-        inPDM = false
-        ClosestShop = nil
+                        },
+                        {
+                            header = 'Finance Vehicle',
+                            txt = 'Finance vehicle to closest citizen',
+                            params = {
+                                event = 'qb-vehicleshop:client:openCustomFinance',
+                                args = {
+                                    price = getVehPrice(),
+                                    buyVehicle = Config.Shops[ClosestShop]["ShowroomVehicles"][ClosestVehicle].chosenVehicle
+                                }
+                            }
+                        },
+                        {
+                            header = 'Swap Vehicle',
+                            txt = 'Change currently selected vehicle',
+                            params = {
+                                event = 'qb-vehicleshop:client:vehCategories',
+                            }
+                        },
+                    }
+                    Wait(1000)
+                end
+            end)
+        else
+            insideZones[name] = false -- leave the shops zone
+            ClosestShop = nil
+            ClosestVehicle = nil
+        end
+    end)
+end
+
+for name, shop in pairs(Config.Shops) do 
+    if shop['Type'] == 'free-use' then
+        createFreeUseShop(shop['Zone']['Shape'], name)
+    elseif shop['Type'] == 'managed' then
+        createManagedShop(shop['Zone']['Shape'], name)
     end
-end)
-
-local luxury = PolyZone:Create({
-    vector2(-81.724754333496, 72.436462402344),
-    vector2(-60.159938812256, 60.576206207275),
-    vector2(-55.763122558594, 61.749210357666),
-    vector2(-52.965869903564, 69.869110107422),
-    vector2(-50.352680206299, 75.886123657227),
-    vector2(-61.261016845703, 81.564918518066),
-    vector2(-63.812171936035, 75.633102416992),
-    vector2(-76.546226501465, 81.189826965332)
-  }, {
-    name="luxury",
-    minZ = 69.0,
-    maxZ = 76.0
-})
-
-luxury:onPlayerInOut(function(isPointInside)
-    if isPointInside then
-        ClosestShop = 'luxury'
-        inLuxury = true
-        CreateThread(function()
-            while inLuxury and PlayerData.job.name == Config.Shops['luxury']['Job'] do
-                setClosestShowroomVehicle()
-                vehicleMenu = {
-                    {
-                        isMenuHeader = true,
-                        header = getVehBrand():upper().. ' '..getVehName():upper().. ' - $' ..getVehPrice(),
-                    },
-                    {
-                        header = 'Test Drive',
-                        txt = 'Send the closest citizen for a test drive',
-                        params = {
-                            isServer = true,
-                            event = 'qb-vehicleshop:server:customTestDrive',
-                            args = {
-                                testVehicle = Config.Shops[ClosestShop]["ShowroomVehicles"][ClosestVehicle].chosenVehicle
-                            }
-                        }
-                    },
-                    {
-                        header = "Sell Vehicle",
-                        txt = 'Sell vehicle to closest citizen',
-                        params = {
-                            isServer = true,
-                            event = 'qb-vehicleshop:server:sellShowroomVehicle',
-                            args = {
-                                buyVehicle = Config.Shops[ClosestShop]["ShowroomVehicles"][ClosestVehicle].chosenVehicle
-                            }
-                        }
-                    },
-                    {
-                        header = 'Finance Vehicle',
-                        txt = 'Finance vehicle to closest citizen',
-                        params = {
-                            event = 'qb-vehicleshop:client:openCustomFinance',
-                            args = {
-                                price = getVehPrice(),
-                                buyVehicle = Config.Shops[ClosestShop]["ShowroomVehicles"][ClosestVehicle].chosenVehicle
-                            }
-                        }
-                    },
-                    {
-                        header = 'Swap Vehicle',
-                        txt = 'Change currently selected vehicle',
-                        params = {
-                            event = 'qb-vehicleshop:client:vehCategories',
-                        }
-                    },
-                }
-                Wait(1000)
-            end
-        end)
-    else
-        inLuxury = false
-        ClosestShop = nil
-    end
-end)
+end
 
 -- Events
 
@@ -665,15 +675,17 @@ end)
 
 CreateThread(function()
     for k,v in pairs(Config.Shops) do
-        local Dealer = AddBlipForCoord(Config.Shops[k]["Location"])
-        SetBlipSprite (Dealer, 326)
-        SetBlipDisplay(Dealer, 4)
-        SetBlipScale  (Dealer, 0.75)
-        SetBlipAsShortRange(Dealer, true)
-        SetBlipColour(Dealer, 3)
-        BeginTextCommandSetBlipName("STRING")
-        AddTextComponentSubstringPlayerName(Config.Shops[k]["ShopLabel"])
-        EndTextCommandSetBlipName(Dealer)
+        if v.showBlip then
+	    local Dealer = AddBlipForCoord(Config.Shops[k]["Location"])
+	    SetBlipSprite (Dealer, 326)
+            SetBlipDisplay(Dealer, 4)
+            SetBlipScale  (Dealer, 0.75)
+	    SetBlipAsShortRange(Dealer, true)
+	    SetBlipColour(Dealer, 3)
+            BeginTextCommandSetBlipName("STRING")
+	    AddTextComponentSubstringPlayerName(Config.Shops[k]["ShopLabel"])
+	    EndTextCommandSetBlipName(Dealer)
+	end
     end
 end)
 
