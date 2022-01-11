@@ -65,8 +65,8 @@ Config.Shops = {
             },
             [5] = {
                 coords = vector4(-40.18, -1104.13, 25.44, 338.5),
-                defaultVehicle = 'pschargerVenom',
-                chosenVehicle = 'pschargerVenom',
+                defaultVehicle = 'cx75',
+                chosenVehicle = 'cx75',
             },
             [6] = {
                 coords = vector4(-43.31, -1099.02, 25.44, 52.5),
